@@ -1,7 +1,7 @@
 # PlumeTraP (Plume Tracking and Parametrization) - v1.0.0
 
 Author: Riccardo Simionato (University of Padova)
-Date: October 2021
+Date: March 2021
 
 PlumeTraP is a MATLAB-based code that semi-automatically tracks volcanic
 plumes from visible-wavelenghts videos and is also capable of automatically
