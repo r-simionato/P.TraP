@@ -1,4 +1,4 @@
-PlumeTraP (Plume Tracking and Parametrization) - v1.0.0
+# PlumeTraP (Plume Tracking and Parametrization) - v1.0.0
 
 Author: Riccardo Simionato (University of Padova)
 Date: October 2021
