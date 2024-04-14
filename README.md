@@ -1,4 +1,4 @@
-PlumeTraP (Plume Tracking and Parametrization) - v2.0.0
+# PlumeTraP (Plume Tracking and Parametrization) - v2.0.0
 DOI: 10.5281/zenodo.6406008 - (https://github.com/r-simionato/PlumeTraP)
 Copyright (C) 2024 Riccardo Simionato (University of Geneva)
 April 2024
