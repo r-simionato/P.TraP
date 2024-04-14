@@ -1,10 +1,10 @@
-%% geometric_calibration - PlumeTraP
+%% geometric_calibration v1.0 - PlumeTraP
 % Function to apply the geometric calibration
-% Author: Riccardo Simionato. Date: March 2022
-% Structure: PlumeTrAP --> geometrical_calibration
+% Author: Riccardo Simionato. Date: October 2021
+% Structure: PlumeTraP --> geometrical_calibration
 
 function [pixel] = geometrical_calibration(imgplume_height,imgplume_width,...
-    par)
+    par,pixel)
 
 %% Geometrical calibration
 % Preallocate
@@ -26,6 +26,19 @@ z_far_tot = pixel.z;
 
 pixel.x = zeros(1,imgplume_width);
 pixel.x_err = pixel.x;
+x_near = pixel.x;
+x_err_near = pixel.x;
+x_far = pixel.x;
+x_err_far = pixel.x;
+x_near_max = pixel.x;
+x_near_min = pixel.x;
+x_far_max = pixel.x;
+x_far_min = pixel.x;
+x_mean = pixel.x;
+x_tot_err_near = pixel.x;
+x_tot_err_far = pixel.x;
+x_near_tot = pixel.x;
+x_far_tot = pixel.x;
 
 % Vertical calibration
 for j = imgplume_height:-1:1

@@ -1,11 +1,11 @@
 %% plume_parameters - PlumeTraP
-% Function to show and save parameters from binary images
-% Author: Riccardo Simionato. Date: March 2022
-% Structure: PlumeTrAP --> plume_parameters
+% Function to show and save parameters from binary images 
+% Author: Riccardo Simionato. Date: October 2023
+% Structure: PlumeTraP --> plume_parameters
 
 function [height,width,plots,velocity,acceleration,tables] = ...
-  plume_parameters(scale_fr,procframes,name,outFolder_orig,imageList_orig,...
-  outFolder_proc,imageList_proc,outFolder_parameters,imgplume_height,pixel)
+    plume_parameters(scale_fr,procframes,name,imageList_orig,outFolder_proc,...
+    imageList_proc,outFolder_parameters,imgplume_height,pixel)
 
 %% Calculation of plume parameters
 % Define structures of output data
@@ -33,13 +33,13 @@ time = zeros(length(imageList_proc),1);
 if isfield(pixel,'vent_pos_x') && isfield(pixel,'vent_pos_y')
 else
     % Extimated vent position
-    if procframes == 'y'
+    if procframes == true
         figure(3)
     else
         figure(1)
     end
-    imshow(imread(fullfile(outFolder_orig,...
-        imageList_orig(length(imageList_orig)).name)));
+    imshow(imread(fullfile(imageList_orig(length(imageList_orig)...
+        ).folder,imageList_orig(length(imageList_orig)).name)))
     title('Extimated vent position')
     imgplume_last = logical(imread(fullfile(outFolder_proc,...
         imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
@@ -58,12 +58,13 @@ else
     % Pick vent position
     if strcmp(VP,'Pick vent position') % pick vent position manually
         while 1
-            if procframes == 'y'
+            if procframes == true
                 figure(3)
             else
                 figure(1)
             end
-            imshow(imread(imageList_orig(length(imageList_orig)).name))
+            imshow(imread(fullfile(imageList_orig(length(imageList_orig)...
+                ).folder,imageList_orig(length(imageList_orig)).name)))
             title('Pick vent position (use zoom in)')
             vent_pos = drawpoint('Color','r','LineWidth',0.5);
             pixel.vent_pos_x = round(vent_pos.Position(1));
@@ -88,7 +89,7 @@ for j = 1:length(imageList_proc)
     [row,col] = find(imgplume); % find rows and columns where imgplume==1
     time(j) = (j-1)/scale_fr;
     
-% Height of the plume above the vent
+    % Height of the plume above the vent
     [height] = plumeheight(j,row,col,pixel,height);
     
     % Total and maximum width of the plume
@@ -96,7 +97,7 @@ for j = 1:length(imageList_proc)
     pixel,width);
     
     % Velocities of the plume head spreading in the atmosphere
-    [velocity] = plumevelocity(j,time,height,velocity);
+    [velocity] = plumevelocity(j,time,pixel,height,velocity);
     
     % Accelerations of the plume head spreading in the atmosphere
     [acceleration] = plumeacceleration(j,time,velocity,acceleration);
@@ -106,23 +107,22 @@ for j = 1:length(imageList_proc)
     progress = j/length(imageList_proc);
     if j == 1 % run a waitbar to show progress
         w = waitbar(progress,sprintf('Processing frame %d/%d',j,...
-            length(imageList_proc)),'Name',sprintf('Plume analysis'),...
-            'Position',[325,140,270,50]);
+            length(imageList_proc)),'Name','Plume analysis');
     else % update the waitbar
         waitbar(progress,w,sprintf('Processing frame %d/%d',j,...
-            length(imageList_proc)),'Name',sprintf('Plume analysis'),...
-            'Position',[325,140,270,50]);
+            length(imageList_proc)),'Name','Plume analysis');
     end
-    fprintf('Plume analysis %d/%d ...\n',j,length(imageList_proc))
     
     % Show plots
-    if procframes == 'y'
+    if procframes == true
         figure(3)
         fig = figure(3);
     else
         figure(1)
         fig = figure(1);
     end
+    fig.Units = 'normalized';
+    fig.Position = [0.05 0.1 0.9 0.8]; % maximize figure
     % Plot height vs time
     subplot(2,2,1)
     plot(time(j),height.mean(j),'r.','MarkerSize',6)
@@ -157,7 +157,7 @@ for j = 1:length(imageList_proc)
     ax = gca;
     ax.YAxis(1).Color = 'k';
     ax.YAxis(2).Color = 'k';
-    title('Plume velocity / acceleration vs t')
+    title('Plume velocity / acceleration vs time')
     legend([p1, p2],{'Velocity','Acceleration'},'Location','best','FontSize',6)
     hold on
     % Save .gif file
@@ -180,5 +180,5 @@ hold off
 %% Save parameters and graph
 [tables] = savepar(outFolder_parameters,name,time,height,width,velocity,...
     acceleration,plots,procframes);
-fprintf('End of %s.mp4 analysis\n',name)
+fprintf('%s ANALYSED\n',name)
 end

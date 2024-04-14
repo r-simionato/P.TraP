@@ -1,7 +1,8 @@
 %% plumewidth - PlumeTraP
 % Function to calculate the physical width of a plume from a binary image
-% Author: Riccardo Simionato. Date: March 2022
-% Structure: PlumeTrAP --> plume_parameters --> plumewidth
+% Author: Riccardo Simionato. Date: October 2023
+% Structure: PlumeTraP --> plume_parameters     --> plumewidth
+%            PlumeTraP --> plume_parameters_app --> plumewidth
 
 function [width,plots] = plumewidth(j,imgplume,imgplume_height,row,col,...
     pixel,width)
@@ -22,7 +23,7 @@ else
         right_px(w) = find(imgplume(w,:),1,'last'); % Crate array of the last plume pixel from left position for each row
         
         width_rows(w) = pixel.x(right_px(w))-pixel.x(left_px(w)); % Width of each row
-        width_rows_err(w) = pixel.x_err(right_px(w))+pixel.x_err(left_px(w)); % Half error of the width of each row
+        width_rows_err(w) = pixel.x_err(right_px(w))-pixel.x_err(left_px(w)); % Mean half error of the width of each row
     end
     
     plots.width = width_rows(width_rows ~= 0); % delete zero values to plot the width of each row vs height
@@ -37,4 +38,5 @@ else
     [width.max(j),pos] = max(width_rows); % Find the maximum value for this timestep and its position
     width.max_error(j) = width_rows_err(pos);
 end
+
 end
