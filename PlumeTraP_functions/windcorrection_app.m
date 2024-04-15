@@ -20,46 +20,56 @@ if isnan(par.wind)
     height_sealevel = reshape(geopot_sealevel/9.80665,...
         [length(geopot_sealevel),1]);
 
-    E_comp = ncread(wind_nc,'u');
-    N_comp = ncread(wind_nc,'v'); % Read the parameters in MatLab
-    E_comp = E_comp(row_long,row_lat,:,row_t);
-    N_comp = N_comp(row_long,row_lat,:,row_t); % m/s
+    u_comp = ncread(wind_nc,'u');
+    v_comp = ncread(wind_nc,'v'); % Read the parameters in MatLab
+    u_comp = u_comp(row_long,row_lat,:,row_t);
+    v_comp = v_comp(row_long,row_lat,:,row_t); % m/s
 
     wind_dir = zeros(length(height_sealevel),1);
+    N_comp = wind_dir;
+    E_comp = wind_dir;
     for d = 1:length(height_sealevel) % Calculate the wind direction basing on the northward and eastward velocity components
-        if E_comp(d) >= 0
-            wind_dir(d) = 90-atand(N_comp(d)/E_comp(d));
-        elseif E_comp(d) < 0
-            wind_dir(d) = 270-atand(N_comp(d)/E_comp(d));
+        if u_comp(d) >= 0
+            wind_dir(d) = 90-atand(v_comp(d)/u_comp(d));
+        elseif u_comp(d) < 0
+            wind_dir(d) = 270-atand(v_comp(d)/u_comp(d));
         end
+        N_comp(d) = v_comp(d);
+        E_comp(d) = u_comp(d);
     end
 
     height_ventlevel = height_sealevel-par.vent_h; % Subtract the vent height to the wind heights matrix
     height_ventlevel = height_ventlevel(height_ventlevel >= 0); % Delete height values lower than zero
     for r_low = length(wind_dir):-1:length(height_ventlevel)+1 % Delete rows corresponding to negative height
         wind_dir(r_low,:) = [];
+        N_comp(r_low,:) = [];
+        E_comp(r_low,:) = []; 
     end
-    height_ventlevel_lower = height_ventlevel(end);
-    wind_dir_lower = wind_dir(end);
-
     imgplume_last = logical(imread(fullfile(outFolder_proc,...
-    imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
+        imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
     [row,~] = find(imgplume_last);
-    if min(row) == 1
-        row = roiPos(2);
-    end
-    height_max = pixel.z(min(row))-pixel.z(pixel.vent_pos_y); % plume maximum height
+    height_max = pixel.z(min(row))-pixel.z(max(row)); % plume maximum height
     heightoutofrange = height_ventlevel(height_ventlevel >= height_max); % Create a matrix of height out of maximum plume height range
     for r_high = length(heightoutofrange)-1:-1:1 % Delete rows corresponding to heights out of range
         height_ventlevel(r_high,:) = [];
         wind_dir(r_high,:) = [];
+        N_comp(r_high,:) = [];
+        E_comp(r_high,:) = [];
     end
 
+    % Get the average wind direction
     if isempty(wind_dir)
         height_ventlevel = height_ventlevel_lower;
-        wind_dir = wind_dir_lower;
+        wind_dir_avg = wind_dir_lower;
+    else
+        N_comp_mean = mean(N_comp);
+        E_comp_mean = mean(E_comp);
+        if E_comp_mean >= 0  
+            wind_dir_avg = 90-atand(N_comp_mean/E_comp_mean);
+        elseif E_comp_mean < 0
+            wind_dir_avg = 270-atand(N_comp_mean/E_comp_mean);
+        end
     end
-    wind_dir_avg = mean(wind_dir); % Get the average wind direction
 else
     wind_dir_avg = par.wind; % Wind direction from the text file
 end
