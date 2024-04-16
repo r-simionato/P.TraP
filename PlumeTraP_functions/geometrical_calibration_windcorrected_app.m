@@ -50,10 +50,16 @@ if isnan(par.wind)
         N_comp(r_low,:) = [];
         E_comp(r_low,:) = []; 
     end
+    height_ventlevel_lower = height_ventlevel(end);
+    wind_dir_lower = wind_dir(end);
+
     imgplume_last = logical(imread(fullfile(outFolder_proc,...
         imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
     [row,~] = find(imgplume_last);
-    height_max = pixel.z(min(row))-pixel.z(max(row)); % plume maximum height
+    if min(row) == 1
+        row = roiPos(2);
+    end
+    height_max = pixel.z(min(row))-pixel.z(pixel.vent_pos_y); % plume maximum height
     heightoutofrange = height_ventlevel(height_ventlevel >= height_max); % Create a matrix of height out of maximum plume height range
     for r_high = length(heightoutofrange)-1:-1:1 % Delete rows corresponding to heights out of range
         height_ventlevel(r_high,:) = [];

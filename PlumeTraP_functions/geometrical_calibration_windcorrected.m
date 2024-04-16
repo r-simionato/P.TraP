@@ -49,6 +49,9 @@ if isnan(par.wind)
         N_comp(r_low,:) = [];
         E_comp(r_low,:) = []; 
     end
+    height_ventlevel_lower = height_ventlevel(end);
+    wind_dir_lower = wind_dir(end);
+    
     imgplume_last = logical(imread(fullfile(outFolder_proc,...
         imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
     [row,~] = find(imgplume_last);
