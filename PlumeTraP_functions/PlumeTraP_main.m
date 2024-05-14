@@ -1,15 +1,16 @@
-%% PlumeTraP 2.0.0 - Main script executed by PlumeTraP.mlapp %%
+%% PlumeTraP 2.1.0 - Main script executed by PlumeTraP.mlapp %%
 % Detection and parameterization of volcanic plumes in visible videos.
-% Starting from a video, frames are saved, segmentated through a specific 
+% Starting from a video, frames are saved, segmentated through a specific
 % technique and basilar parameters of the plume through time are extracted.
 
 % Copyright (C) 2024 Riccardo Simionato
-% Last updated: Apr-2024
+% Last updated: May 2024
 % Developed with MATLAB R2023b and Image Processing Toolbox 23.2
 
 clc; close all;
-fprintf('PlumeTraP 2.0.0\nCopyright (C) 2024 Riccardo Simionato\n\nThis program is free software: you can redistribute it and/or modify it under the terms of the\nGNU General Public License as published by the Free Software Foundation, either version 3 of the\nLicense, or (at your option) any later version.\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;\nwithout even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\nSee the GNU General Public License for more details (https://www.gnu.org/licenses/gpl-3.0.html).\n\n')
+fprintf('PlumeTraP 2.1.0\nCopyright (C) 2024 Riccardo Simionato\n\nThis program is free software: you can redistribute it and/or modify it under the terms of the\nGNU General Public License as published by the Free Software Foundation, either version 3 of the\nLicense, or (at your option) any later version.\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;\nwithout even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\nSee the GNU General Public License for more details (https://www.gnu.org/licenses/gpl-3.0.html).\n\n')
 addpath(genpath(pwd))
+warning('off','MATLAB:MKDIR:DirectoryExists')
 
 %% Start the process
 if source == 'v'
@@ -65,10 +66,6 @@ for v = 1:length(list)                                                      % st
     end
 
     %% Frames processing
-    outFolder_proc = fullfile(outFolder,name,sprintf('%s_Processed',name)); % select the output folder or that where processed frames are saved
-    mkdir(outFolder_proc)
-    addpath(outFolder_proc)
-    
     if procframes == 1
         if source == 'v'
             imageList_orig = dir(fullfile(outFolder_orig,outFormat));       % read saved frames
@@ -84,19 +81,25 @@ for v = 1:length(list)                                                      % st
         elseif source == 'i'
             imageList_orig = dir(fullfile(outFolder_orig,inFormat));        % read saved frames
         end
-        
+
         appFP = app_FrameProcessing;
         waitfor(appFP)
 
         if mantrack == 0
+            outFolder_proc = fullfile(outFolder,name,sprintf('%s_Processed',name)); % select the output folder or that where processed frames are saved
+            mkdir(outFolder_proc)
+            addpath(outFolder_proc)
+
             frame_processing_app(outFolder_proc,outFolder_orig,imageList_orig,...
                 name,outFormat,mask,th_all,th_first,nousebkgr,...
                 saveprocessedframes,rgbuse_bkg,rgbuse_all);
+
         elseif mantrack == 1
             outFolder_proc = outFolder_orig;
         end
 
-elseif procframes == 0 && parameters == 1                                   % loading already analysed frames waitbar
+    elseif procframes == 0 && parameters == 1                                   % loading already analysed frames waitbar
+        outFolder_proc = fullfile(outFolder,name,sprintf('%s_Processed',name)); % select the output folder or that where processed frames are saved
         imageList_orig = dir(fullfile(outFolder_orig,outFormat));           % read saved frames
         mantrack = false;
         while isempty(imageList_orig)
@@ -109,16 +112,26 @@ elseif procframes == 0 && parameters == 1                                   % lo
             end
         end
 
+        img_end = imread(fullfile(outFolder_proc,imageList_proc(length(imageList_proc)).name));
+        [row,col] = find(img_end);
+        roiPos = [min(col) min(row) max(col)-min(col) max(row)-min(row)];
+
         w = waitbar(1,'Loading frames','Name','Loading frames');
         pause(1)
         fprintf('LOADING %s FRAMES ...\n',name)
         close(w)
     end
-    
+
     %% Corrections & calculation of plume parameters
     if parameters == 1
         imageList_proc = dir(fullfile(outFolder_proc,outFormat));           % read images
+        if isempty(imageList_proc) && source == 'i'
+            imageList_proc = dir(fullfile(outFolder_proc,inFormat));
+        elseif mantrack == 1
+            imageList_proc = imageList_orig;
+        end
         outFolder_parameters = fullfile(outFolder,name);
+        mkdir(outFolder_parameters)
         [imgplume_height,imgplume_width,~] = ...
             size(imread(fullfile(outFolder_proc,imageList_proc(1).name)));
 
@@ -126,66 +139,56 @@ elseif procframes == 0 && parameters == 1                                   % lo
         waitfor(appVP)
         pixel.vent_pos_x = VentPos_x;
         pixel.vent_pos_y = VentPos_y;
-        
+
         %% Corrections
-        if gcal == 'c' || gcal == 'i'
-            % Set input parameters
-            if gcal == 'c'
-                geometrical_data = textscan(fopen(GeometricalData),...
-                    '%s %.f %.f %.1f %.1f %.f %.2f %s %s %.1f %.2f %.2f %.f'); % Read data as a table with columns with different format
-                for V = 1:size(geometrical_data{1},1)
-                    if isequal(char(geometrical_data{1}(V)),name)
-                        par.min_dist = geometrical_data{2}(V);              % Minimum distance from the camera to the image plane
-                        par.max_dist = geometrical_data{3}(V);              % Maximum distance from the camera to the image plane
-                        par.beta_h = geometrical_data{4}(V);                % Horizontal FOV
-                        par.beta_v = geometrical_data{5}(V);                % Vertical FOV
-                        par.phi = geometrical_data{6}(V);                   % Camera inclination
-                        if wcor == 1
-                            par.omega = geometrical_data{7}(V);             % Camera orientation
-                            par.UTCdaytime = datetime(...                   % Day of the eruption (dd-Mmm-yyyy) and approximated to the hour time of the eruption (hh:00:00)
-                                string(geometrical_data{8}(V))+' '+...
-                                string(geometrical_data{9}(V)),...
-                                'InputFormat','dd-MMM-yyyy HH:mm:ss');
-                            par.wind = geometrical_data{10}(V);             % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
-                            par.vent_lat = geometrical_data{11}(V);         % Approximate latitude (decimal)
-                            par.vent_long = geometrical_data{12}(V);        % Approximate longitude (decimal)
-                            par.vent_h = geometrical_data{13}(V);           % Vent height
-                        end
-                    end
-                end
-            elseif gcal == 'i'
-                par.min_dist = par_min_dist;                                % Minimum distance from the camera to the image plane
-                par.max_dist = par_max_dist;                                % Maximum distance from the camera to the image plane
-                par.beta_h = par_beta_h;                                    % Horizontal FOV
-                par.beta_v = par_beta_v;                                    % Vertical FOV
-                par.phi = par_phi;                                          % Camera inclination
-                if wcor == 1
-                    par.omega = par_omega;                                  % Camera orientation
-                    par.vent_lat = par_vent_lat;                            % Approximate latitude (decimal)
-                    par.vent_long = par_vent_long;                          % Approximate longitude (decimal)
-                    par.vent_h = par_vent_h;                                % Vent height
-                par.wind = par_wind;                                        % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
-                    if isnan(par_wind)
-                        par.UTCdaytime = datetime(...                       % Day of the eruption (dd-Mmm-yyyy) and approximated to the hour time of the eruption (hh:00:00)
-                            string(par_date)+' '+string(par_time),...
+        % if gcal == 'c' || gcal == 'i'
+        % Set input parameters
+        if gcal == 'c'
+            geometrical_data = textscan(fopen(GeometricalData),...
+                '%s %.f %.f %.1f %.1f %.f %.2f %s %s %.1f %.2f %.2f %.f'); % Read data as a table with columns with different format
+            for V = 1:size(geometrical_data{1},1)
+                if isequal(char(geometrical_data{1}(V)),name)
+                    par.min_dist = geometrical_data{2}(V);              % Minimum distance from the camera to the image plane
+                    par.max_dist = geometrical_data{3}(V);              % Maximum distance from the camera to the image plane
+                    par.beta_h = geometrical_data{4}(V);                % Horizontal FOV
+                    par.beta_v = geometrical_data{5}(V);                % Vertical FOV
+                    par.phi = geometrical_data{6}(V);                   % Camera inclination
+                    if wcor == 1
+                        par.omega = geometrical_data{7}(V);             % Camera orientation
+                        par.UTCdaytime = datetime(...                   % Day of the eruption (dd-Mmm-yyyy) and approximated to the hour time of the eruption (hh:00:00)
+                            string(geometrical_data{8}(V))+' '+...
+                            string(geometrical_data{9}(V)),...
                             'InputFormat','dd-MMM-yyyy HH:mm:ss');
+                        par.wind_met = geometrical_data{10}(V);             % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
+                        par.vent_lat = geometrical_data{11}(V);         % Approximate latitude (decimal)
+                        par.vent_long = geometrical_data{12}(V);        % Approximate longitude (decimal)
+                        par.vent_h = geometrical_data{13}(V);           % Vent height
                     end
                 end
             end
             par.beta_h_pixel = par.beta_h/imgplume_width;                   % Determine the horizontal angle subtended by each pixel
             par.beta_v_pixel = par.beta_v/imgplume_height;                  % Determine the vertical angle subtended by each pixel
 
-            % Apply geometrical calibration and wind correction
-            if wcor == 0
-                [pixel] = geometrical_calibration...
-                    (imgplume_height,imgplume_width,par,pixel);
-                wdir = 'nowind';
-            elseif wcor == 1
-                [pixel,wdir] = geometrical_calibration_windcorrected_app...
-                    (procframes,outFolder_proc,imageList_proc,...
-                    outFolder_parameters,imgplume_height,imgplume_width,par,...
-                    geopot_nc,wind_nc,pixel,roiPos);
+        elseif gcal == 'i'
+            par.min_dist = par_min_dist;                                % Minimum distance from the camera to the image plane
+            par.max_dist = par_max_dist;                                % Maximum distance from the camera to the image plane
+            par.beta_h = par_beta_h;                                    % Horizontal FOV
+            par.beta_v = par_beta_v;                                    % Vertical FOV
+            par.phi = par_phi;                                          % Camera inclination
+            if wcor == 1
+                par.omega = par_omega;                                  % Camera orientation
+                par.wind_met = par_wind;                                % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
+                if isnan(par_wind)
+                    par.vent_lat = par_vent_lat;                        % Approximate latitude (decimal)
+                    par.vent_long = par_vent_long;                      % Approximate longitude (decimal)
+                    par.vent_h = par_vent_h;                            % Vent height
+                    par.UTCdaytime = datetime(...                       % Day of the eruption (dd-Mmm-yyyy) and approximated to the hour time of the eruption (hh:00:00)
+                        string(par_date)+' '+string(par_time),...
+                        'InputFormat','dd-MMM-yyyy HH:mm:ss');
+                end
             end
+            par.beta_h_pixel = par.beta_h/imgplume_width;                   % Determine the horizontal angle subtended by each pixel
+            par.beta_v_pixel = par.beta_v/imgplume_height;                  % Determine the vertical angle subtended by each pixel
 
         elseif gcal == 'u'                                                  % Use calibration file
             h_cal = table2array(readtable(HorizontalCalibratedData));       % Read data file as an array
@@ -205,22 +208,20 @@ elseif procframes == 0 && parameters == 1                                   % lo
                 par.vent_lat = par_vent_lat;                                % Approximate latitude (decimal)
                 par.vent_long = par_vent_long;                              % Approximate longitude (decimal)
                 par.vent_h = par_vent_h;                                    % Vent height
+                par.wind_met = par_wind;                                    % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
                 if isnan(par_wind)
                     par.UTCdaytime = datetime(...                           % Day of the eruption (dd-Mmm-yyyy) and approximated to the hour time of the eruption (hh:00:00)
                         string(par_date)+' '+string(par_time),...
                         'InputFormat','dd-MMM-yyyy HH:mm:ss');
-                else
-                    par.wind = par_wind;                                    % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
                 end
                 par.beta_h_pixel = par.beta_h/imgplume_width;               % Determine the horizontal angle subtended by each pixel
                 par.beta_v_pixel = par.beta_v/imgplume_height;              % Determine the vertical angle subtended by each pixel
-
-                [pixel,wdir] = windcorrection_app(pixel,...
-                    procframes,outFolder_proc,imageList_proc,...
-                    outFolder_parameters,imgplume_height,imgplume_width,par,...
-                    geopot_nc,wind_nc,roiPos);
             end
         end
+
+        [pixel,wdir] = calibration_app(gcal,wcor,procframes,outFolder_proc,...
+            imageList_proc,outFolder_parameters,imgplume_height,...
+            imgplume_width,par,geopot_nc,wind_nc,pixel,roiPos,name);
 
         %% Get & save plume parameters
         if mantrack == 0
@@ -250,6 +251,7 @@ elseif procframes == 0 && parameters == 1                                   % lo
     beep
     if length(list) > 1 && isequal(isequal(length(list),v),0)
         close all
-        clear("pixel")
+        clear pixel par
     end
 end
+warning('on','MATLAB:MKDIR:DirectoryExists')

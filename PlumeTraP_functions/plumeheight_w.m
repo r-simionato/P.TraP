@@ -1,6 +1,6 @@
 %% plumeheight_w - PlumeTraP
 % Function to calculate the physical height of a plume with wind correction
-% Author: Riccardo Simionato. Date: October 2023
+% Author: Riccardo Simionato. Date: May 2024
 % Structure: PlumeTraP --> plume_parameters_w --> plumeheight_w
 
 function [height,plots] = plumeheight_w(j,imgplume,row,col,pixel,height,...
@@ -8,12 +8,12 @@ function [height,plots] = plumeheight_w(j,imgplume,row,col,pixel,height,...
 
 if isempty(row) && isempty(col)
     height.mean(j) = 0;
-    height.error_tot(j) = pixel.z_err(pixel.vent_pos_y);
-    height.error(j) = pixel.z_err(pixel.vent_pos_y)-pixel.z_err(pixel.vent_pos_y);
+    height.error_ref(j) = pixel.z_err(pixel.vent_pos_y)-pixel.z_err(pixel.vent_pos_y);
+    height.error(j) = pixel.z_err(pixel.vent_pos_y);
     height.wp_mean(j) = 0;
-    height.wp_error_tot(j) = pixel.z_wp_err(pixel.vent_pos_y,pixel.vent_pos_x);
-    height.wp_error(j) = pixel.z_wp_err(pixel.vent_pos_y,pixel.vent_pos_x)-...
+    height.wp_error_ref(j) = pixel.z_wp_err(pixel.vent_pos_y,pixel.vent_pos_x)-...
         pixel.z_wp_err(pixel.vent_pos_y,pixel.vent_pos_x);
+    height.wp_error(j) = pixel.z_wp_err(pixel.vent_pos_y,pixel.vent_pos_x);
     plots.wp_height = 0;
     plots.wp_height_plot = 0;
     plots.wp_height_err = 0;
@@ -21,8 +21,8 @@ if isempty(row) && isempty(col)
 else
     % Calculation in the image plane (without wind correction)
     height.mean(j) = pixel.z(min(row))-pixel.z(pixel.vent_pos_y); % Mean height of the top of the plume
-    height.error_tot(j) = pixel.z_err(min(row)); % Mean half the total error (e.g., height.mean +- height.error)
-    height.error(j) = pixel.z_err(min(row))-pixel.z_err(pixel.vent_pos_y); % Mean half the referenced error (only depending on pixel, not on camera - image plane distance)
+    height.error_ref(j) = pixel.z_err(min(row))-pixel.z_err(pixel.vent_pos_y); % Mean half the referenced error (only depending on pixel, not on camera - image plane distance)
+    height.error(j) = pixel.z_err(min(row)); % Mean half the total error (e.g., height.mean +- height.error)
 
     % Calculation in the wind-corrected plane
     plumeshape_height = pixel.z_wp; 
@@ -36,9 +36,9 @@ else
     
     height.wp_mean(j) = (pixel.z_wp(rowMax,colMax)-...
         pixel.z_wp(pixel.vent_pos_y,pixel.vent_pos_x)); % Mean height
-    height.wp_error_tot(j) = pixel.z_wp_err(rowMax,colMax);
-    height.wp_error(j) = (pixel.z_wp_err(rowMax,colMax)-...
+    height.wp_error_ref(j) = (pixel.z_wp_err(rowMax,colMax)-...
         pixel.z_wp_err(pixel.vent_pos_y,pixel.vent_pos_x)); % Half the total error
+    height.wp_error(j) = pixel.z_wp_err(rowMax,colMax);
 
     plots.wp_height_plot = 0;
     plots.wp_height_err = 0;

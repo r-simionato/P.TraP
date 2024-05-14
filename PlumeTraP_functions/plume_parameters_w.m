@@ -1,7 +1,7 @@
 %% plume_parameters_w - PlumeTraP
 % Function to show and save parameters from binary images with
 % wind correction
-% Author: Riccardo Simionato. Date: October 2023
+% Author: Riccardo Simionato. Date: May 2024
 % Structure: PlumeTraP --> plume_parameters_w
 
 function [height,width,plots,velocity,acceleration,tables]=...
@@ -12,8 +12,10 @@ function [height,width,plots,velocity,acceleration,tables]=...
 % Define structures of output data
 height.mean = zeros(length(imageList_proc),1); 
 height.error = height.mean;
+height.error_ref = height.mean;
 height.wp_mean = height.mean; 
 height.wp_error = height.mean;
+height.wp_error_ref = height.mean;
 
 width.max = zeros(length(imageList_proc),1); 
 width.max_error = width.max;
@@ -70,10 +72,12 @@ for j = 1:length(imageList_proc)
     progress = j/length(imageList_proc);
     if j == 1 % run a waitbar to show progress
         w = waitbar(progress,sprintf('Processing frame %d/%d',j,...
-            length(imageList_proc)),'Name','Plume analysis');
+            length(imageList_proc)),'Name','Plume analysis','Units',...
+            'normalized','Position',[0.4,0.04,0.19,0.07]);
     else % update the waitbar
         waitbar(progress,w,sprintf('Processing frame %d/%d',j,...
-            length(imageList_proc)),'Name','Plume analysis');
+            length(imageList_proc)),'Name','Plume analysis','Units',...
+            'normalized','Position',[0.4,0.04,0.19,0.07]);
     end
 
     % Show plots

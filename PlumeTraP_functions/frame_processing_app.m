@@ -22,10 +22,12 @@ for i = 1:length(imageList_orig)
     progress = i/length(imageList_orig);
     if i == 1 % run a waitbar to show progress
         w = waitbar(progress,sprintf('Processing frame %d/%d',i,...
-            length(imageList_orig)),'Name','Processing frames');
+            length(imageList_orig)),'Name','Processing frames','Units',...
+            'normalized','Position',[0.4,0.04,0.19,0.07]);
     else % update the waitbar
         waitbar(progress,w,sprintf('Processing frame %d/%d',i,...
-            length(imageList_orig)),'Name','Processing frames');
+            length(imageList_orig)),'Name','Processing frames','Units',...
+            'normalized','Position',[0.4,0.04,0.19,0.07]);
     end
 
     img = imread(fullfile(outFolder_orig,imageList_orig(i).name)); % read images

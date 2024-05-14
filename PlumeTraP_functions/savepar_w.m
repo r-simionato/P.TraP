@@ -1,6 +1,6 @@
 %% savepar_w - PlumeTraP
 % Function to save the obtained parameters with wind correction
-% Author: Riccardo Simionato. Date: November 2021
+% Author: Riccardo Simionato. Date: May 2024
 % Structure: PlumeTraP --> plume_parameters_w --> savepar_w
 
 function [tables] = savepar_w(outFolder_parameters,name,time,height,width,...
@@ -73,46 +73,55 @@ else
 end
 fig.Units = 'normalized';
 fig.Position = [0.05 0.1 0.9 0.8]; % maximize figure
+
 subplot(2,1,1)
-ip1 = plot(time,height.mean,'-','LineWidth',1);
-ip1.Color = [0 0.4470 0.7410];
 title(name,'image plane','Interpreter','none')
 xlabel('Time [s]')
 ylabel('Length [m]')
 hold on
-ip2 = plot(time,width.max,'-','LineWidth',1);
-ip2.Color = [0.4660 0.6740 0.1880];
-yyaxis right
-ip3 = plot(time,velocity.avg,'-','LineWidth',1);
-ip3.Color = [0.6350 0.0780 0.1840];
-ip4 = plot(time,acceleration.avg,'-','LineWidth',1);
-ip4.Color = [0.9290 0.6940 0.1250];
-ylabel('Velocity [m/s] or Acceleration [m/s^2]')
+[ph,~] = confplotrs(time,height.mean,height.error,height.error,"LineStyle","-","Color","#4363d8","LineWidth",1.5,"Marker","none");
 hold off
+hold on
+[pw,~] = confplotrs(time,width.max,width.max_error,width.max_error,"LineStyle","-","Color","#b87bff","LineWidth",1.5,"Marker","none");
+hold off
+hold on
+yyaxis right
+[pv,~] = confplotrs(time,velocity.avg,velocity.avg_error,velocity.avg_error,"LineStyle","-","Color","#800000","LineWidth",1.5,"Marker","none");
+hold off
+hold on
+[pa,~] = confplotrs(time,acceleration.avg,acceleration.avg_error,acceleration.avg_error,"LineStyle","-","Color","#f58231","LineWidth",1.5,"Marker","none");
+hold off
+ylabel('Velocity [m/s] or Acceleration [m/s^2]')
+xlim([time(1) time(end)])
 ax = gca;
 ax.YAxis(2).Color = 'k';
-legend({'Height','Width','Velocity','Acceleration'},'Location','southeast',...
-    'FontSize',8)
+legend([ph,pw,pv,pa],{'Height','Width','Velocity','Acceleration'},'Location','southeast',...
+    'FontSize',10)
+
 subplot(2,1,2)
-wp1 = plot(time,height.wp_mean,'-','LineWidth',1);
-wp1.Color = [0 0.4470 0.7410];
 title(name,'wind-corrected plane','Interpreter','none')
 xlabel('Time [s]')
 ylabel('Length [m]')
 hold on
-wp2 = plot(time,width.wp_max,'-','LineWidth',1);
-wp2.Color = [0.4660 0.6740 0.1880];
-yyaxis right
-wp3 = plot(time,velocity.wp_avg,'-','LineWidth',1);
-wp3.Color = [0.6350 0.0780 0.1840];
-wp4 = plot(time,acceleration.wp_avg,'-','LineWidth',1);
-wp4.Color = [0.9290 0.6940 0.1250];
-ylabel('Velocity [m/s] or Acceleration [m/s^2]')
+[ph_wp,~] = confplotrs(time,height.wp_mean,height.wp_error,height.wp_error,"LineStyle","-","Color","#223ea4","LineWidth",1.5,"Marker","none");
 hold off
+hold on
+[pw_wp,~] = confplotrs(time,width.max,width.max_error,width.max_error,"LineStyle","-","Color","#7b0aff","LineWidth",1.5,"Marker","none");
+hold off
+hold on
+yyaxis right
+[pv_wp,~] = confplotrs(time,velocity.wp_avg,velocity.wp_avg_error,velocity.wp_avg_error,"LineStyle","-","Color","#5a0000","LineWidth",1.5,"Marker","none");
+hold off
+hold on
+[pa_wp,~] = confplotrs(time,acceleration.wp_avg,acceleration.wp_avg_error,acceleration.wp_avg_error,"LineStyle","-","Color","#c4570a","LineWidth",1.5,"Marker","none");
+hold off
+ylabel('Velocity [m/s] or Acceleration [m/s^2]')
+xlim([time(1) time(end)])
 ax = gca;
 ax.YAxis(2).Color = 'k';
-legend({'Height','Width','Velocity','Acceleration'},'Location','southeast',...
-    'FontSize',8)
+legend([ph_wp,pw_wp,pv_wp,pa_wp],{'Height','Width','Velocity','Acceleration'},'Location','southeast',...
+    'FontSize',10)
+
 saveas(fig,fullfile(outFolder_parameters,sprintf('%s_Plot.png',name)))
 saveas(fig,fullfile(outFolder_parameters,sprintf('%s_Plot.fig',name)))
 

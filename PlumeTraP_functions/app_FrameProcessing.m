@@ -1,6 +1,6 @@
 %% app_FrameProcessing - PlumeTraP
 % GUI to choose the thresholds and processing parameters for binarization
-% Author: Riccardo Simionato. Date: April 2024
+% Author: Riccardo Simionato. Date: May 2024
 % Structure: PlumeTraP --> app_FrameProcessing
 
 classdef app_FrameProcessing < matlab.apps.AppBase
@@ -49,7 +49,7 @@ classdef app_FrameProcessing < matlab.apps.AppBase
         function startupFcn(app)
             outFolder_orig = evalin('base','outFolder_orig');
             imageList_orig = evalin('base','imageList_orig');
-            app.frameSpinner.Limits = [2 length(imageList_orig)];
+            app.frameSpinner.Limits = [1 length(imageList_orig)];
 
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
             [r,~,b] = imsplit(img_start);
@@ -68,7 +68,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             th_first = app.ThBackSlider.Value/100;
 
             i = length(imageList_orig);
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_height,img_width,~] = size(img_end);
             mask = ones(img_height,img_width);
@@ -114,7 +118,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             rgbuse_bkg = app.rgbuseBkgSwitch.Value;
 
             i = length(imageList_orig);
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_start_bin,~,~,~,img_end_plume_holes] = ...
                 image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -151,7 +159,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
                 rgbuse_bkg = app.rgbuseBkgSwitch.Value;
 
                 i = length(imageList_orig);
-                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name)); 
+                if length(imageList_orig) == 1
+                    img_precEnd = img_start;
+                else
+                    img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+                end 
                 img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name)); 
                 [img_start_bin,~,~,~,img_end_plume_holes] = ...
                     image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -187,7 +199,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             mask = evalin('base','mask');
             i = length(imageList_orig);
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_start_bin,~,~,~,img_end_plume_holes] = ...
                 image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -222,7 +238,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             mask = evalin('base','mask');
             i = length(imageList_orig);
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_start_bin,~,~,~,img_end_plume_holes] = ...
                 image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -266,7 +286,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             mask = evalin('base','mask');
             i = length(imageList_orig);
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_start_bin,~,~,~,img_end_plume_holes] = ...
                 image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -302,7 +326,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             mask = evalin('base','mask');
             i = length(imageList_orig);
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_start_bin,~,~,~,img_end_plume_holes] = ...
                 image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -338,7 +366,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             mask = evalin('base','mask');
             i = length(imageList_orig);
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
-            img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            if length(imageList_orig) == 1
+                img_precEnd = img_start;
+            else
+                img_precEnd = imread(fullfile(outFolder_orig,imageList_orig(i-1).name));
+            end
             img_end = imread(fullfile(outFolder_orig,imageList_orig(length(imageList_orig)).name));
             [img_start_bin,~,~,~,img_end_plume_holes] = ...
                 image_analysis_app(img_end,img_start,img_precEnd,i,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);
@@ -367,7 +399,11 @@ classdef app_FrameProcessing < matlab.apps.AppBase
             imageList_orig = evalin('base','imageList_orig');
             mask = evalin('base','mask');
             img_start = imread(fullfile(outFolder_orig,imageList_orig(1).name));
-            img_prec2 = imread(fullfile(outFolder_orig,imageList_orig(app.frameSpinner.Value-1).name));
+            if app.frameSpinner.Value > 1
+                img_prec2 = imread(fullfile(outFolder_orig,imageList_orig(app.frameSpinner.Value-1).name));
+            else
+                img_prec2 = imread(fullfile(outFolder_orig,imageList_orig(app.frameSpinner.Value).name));
+            end
             img2 = imread(fullfile(outFolder_orig,imageList_orig(app.frameSpinner.Value).name));
             [~,~,~,~,img2_plume_holes] = image_analysis_app(img2,...
                 img_start,img_prec2,app.frameSpinner.Value,mask,th_first,th_all,nousebkgr,rgbuse_bkg,rgbuse_all);

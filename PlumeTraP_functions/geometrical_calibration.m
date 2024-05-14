@@ -1,7 +1,8 @@
-%% geometric_calibration v1.0 - PlumeTraP
-% Function to apply the geometric calibration
+%% geometrical_calibration - PlumeTraP
+% Function to apply the geometrical calibration
 % Author: Riccardo Simionato. Date: October 2021
-% Structure: PlumeTraP --> geometrical_calibration
+% Structure: PlumeTraP --> calibration --> geometrical_calibration
+%            PlumeTraP --> calibration_app --> geometrical_calibration
 
 function [pixel] = geometrical_calibration(imgplume_height,imgplume_width,...
     par,pixel)

@@ -1,4 +1,4 @@
-%% PlumeTraP 2.0.0 - Script version - %%
+%% PlumeTraP 2.1.0 - Script version - %%
 % Detection and parameterization of volcanic plumes in visible videos.
 % Starting from a video, frames are saved, segmentated through a specific 
 % technique and basilar parameters of the plume through time are extracted.

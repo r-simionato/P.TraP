@@ -1,6 +1,6 @@
 %% plume_parameters - PlumeTraP
-% Function to show and save parameters from binary images 
-% Author: Riccardo Simionato. Date: October 2023
+% Function to show and save parameters from binary images
+% Author: Riccardo Simionato. Date: May 2024
 % Structure: PlumeTraP --> plume_parameters
 
 function [height,width,plots,velocity,acceleration,tables] = ...
@@ -9,76 +9,74 @@ function [height,width,plots,velocity,acceleration,tables] = ...
 
 %% Calculation of plume parameters
 % Define structures of output data
-height.mean = zeros(length(imageList_proc),1); 
+height.mean = zeros(length(imageList_proc),1);
 height.error = height.mean;
+height.error_ref = height.mean;
 
-width.max = zeros(length(imageList_proc),1); 
+width.max = zeros(length(imageList_proc),1);
 width.max_error = width.max;
-width.rows = zeros(imgplume_height,length(imageList_proc)); 
+width.rows = zeros(imgplume_height,length(imageList_proc));
 width.rows_error = width.rows;
 
-velocity.inst = zeros(length(imageList_proc),1); 
-velocity.avg = velocity.inst; 
-velocity.inst_error = velocity.inst; 
+velocity.inst = zeros(length(imageList_proc),1);
+velocity.avg = velocity.inst;
+velocity.inst_error = velocity.inst;
 velocity.avg_error = velocity.inst;
 
-acceleration.inst = zeros(length(imageList_proc),1); 
-acceleration.avg = acceleration.inst; 
-acceleration.inst_error = acceleration.inst; 
+acceleration.inst = zeros(length(imageList_proc),1);
+acceleration.avg = acceleration.inst;
+acceleration.inst_error = acceleration.inst;
 acceleration.avg_error = acceleration.inst;
 
 time = zeros(length(imageList_proc),1);
 
 % Vent position
-if isfield(pixel,'vent_pos_x') && isfield(pixel,'vent_pos_y')
+% Extimated vent position
+if procframes == true
+    figure(3)
 else
-    % Extimated vent position
-    if procframes == true
-        figure(3)
-    else
-        figure(1)
-    end
-    imshow(imread(fullfile(imageList_orig(length(imageList_orig)...
-        ).folder,imageList_orig(length(imageList_orig)).name)))
-    title('Extimated vent position')
-    imgplume_last = logical(imread(fullfile(outFolder_proc,...
-        imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
-    [row,~] = find(imgplume_last);
-    pixel.vent_pos_y = max(row);
-    pixel.vent_pos_x = round((find(imgplume_last(max(row),:),1,'last')+...
-        find(imgplume_last(max(row),:),1))/2); % find vent pixel position
-    images.roi.Point(gca,'Position',[pixel.vent_pos_x,pixel.vent_pos_y],...
-        'Color','r','LineWidth',0.5);
+    figure(1)
+end
+imshow(imread(fullfile(imageList_orig(length(imageList_orig)...
+    ).folder,imageList_orig(length(imageList_orig)).name)))
+title('Extimated vent position')
+imgplume_last = logical(imread(fullfile(outFolder_proc,...
+    imageList_proc(length(imageList_proc)).name))); % read last image as logical to get maximum height
+[row,~] = find(imgplume_last);
+pixel.vent_pos_y = max(row);
+pixel.vent_pos_x = round((find(imgplume_last(max(row),:),1,'last')+...
+    find(imgplume_last(max(row),:),1))/2); % find vent pixel position
+images.roi.Point(gca,'Position',[pixel.vent_pos_x,pixel.vent_pos_y],...
+    'Color','r','LineWidth',0.5);
 
-    quest = 'Use extimated vent position?';
-    opts.Interpreter = 'tex';
-    opts.Default = 'Yes';
-    VP = questdlg(quest,'Vent position','Yes','Pick vent position',opts);
+quest = 'Use extimated vent position?';
+opts.Interpreter = 'tex';
+opts.Default = 'Yes';
+VP = questdlg(quest,'Vent position','Yes','Pick vent position',opts);
 
-    % Pick vent position
-    if strcmp(VP,'Pick vent position') % pick vent position manually
-        while 1
-            if procframes == true
-                figure(3)
-            else
-                figure(1)
-            end
-            imshow(imread(fullfile(imageList_orig(length(imageList_orig)...
-                ).folder,imageList_orig(length(imageList_orig)).name)))
-            title('Pick vent position (use zoom in)')
-            vent_pos = drawpoint('Color','r','LineWidth',0.5);
-            pixel.vent_pos_x = round(vent_pos.Position(1));
-            pixel.vent_pos_y = round(vent_pos.Position(2));
+% Pick vent position
+if strcmp(VP,'Pick vent position') % pick vent position manually
+    while 1
+        if procframes == true
+            figure(3)
+        else
+            figure(1)
+        end
+        imshow(imread(fullfile(imageList_orig(length(imageList_orig)...
+            ).folder,imageList_orig(length(imageList_orig)).name)))
+        title('Pick vent position (use zoom in)')
+        vent_pos = drawpoint('Color','r','LineWidth',0.5);
+        pixel.vent_pos_x = round(vent_pos.Position(1));
+        pixel.vent_pos_y = round(vent_pos.Position(2));
 
-            quest = 'Do you want to proceed with this vent position?';
-            opts.Interpreter = 'tex';
-            opts.Default = 'Yes';
-            pickVP = questdlg(quest,'Confirm vent position','Yes',...
-                'Pick vent position',opts);
+        quest = 'Do you want to proceed with this vent position?';
+        opts.Interpreter = 'tex';
+        opts.Default = 'Yes';
+        pickVP = questdlg(quest,'Confirm vent position','Yes',...
+            'Pick vent position',opts);
 
-            if strcmp(pickVP,'Yes') % stops the while loop if the drawn ROI is good
-                break
-            end
+        if strcmp(pickVP,'Yes') % stops the while loop if the drawn ROI is good
+            break
         end
     end
 end
@@ -88,31 +86,33 @@ for j = 1:length(imageList_proc)
         logical(imread(fullfile(outFolder_proc,imageList_proc(j).name))); % read images as logical
     [row,col] = find(imgplume); % find rows and columns where imgplume==1
     time(j) = (j-1)/scale_fr;
-    
+
     % Height of the plume above the vent
     [height] = plumeheight(j,row,col,pixel,height);
-    
+
     % Total and maximum width of the plume
     [width,plots] = plumewidth(j,imgplume,imgplume_height,row,col,...
-    pixel,width);
-    
+        pixel,width);
+
     % Velocities of the plume head spreading in the atmosphere
     [velocity] = plumevelocity(j,time,pixel,height,velocity);
-    
+
     % Accelerations of the plume head spreading in the atmosphere
     [acceleration] = plumeacceleration(j,time,velocity,acceleration);
-    
+
     %% Progress and plots
     % Show progress of the analysis
     progress = j/length(imageList_proc);
     if j == 1 % run a waitbar to show progress
         w = waitbar(progress,sprintf('Processing frame %d/%d',j,...
-            length(imageList_proc)),'Name','Plume analysis');
+            length(imageList_proc)),'Name','Plume analysis','Units',...
+            'normalized','Position',[0.4,0.04,0.19,0.07]);
     else % update the waitbar
         waitbar(progress,w,sprintf('Processing frame %d/%d',j,...
-            length(imageList_proc)),'Name','Plume analysis');
+            length(imageList_proc)),'Name','Plume analysis','Units',...
+            'normalized','Position',[0.4,0.04,0.19,0.07]);
     end
-    
+
     % Show plots
     if procframes == true
         figure(3)

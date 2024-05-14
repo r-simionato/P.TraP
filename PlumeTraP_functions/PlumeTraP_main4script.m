@@ -1,6 +1,6 @@
-%% PlumeTraP 2.0.0 - Main function executed by PlumeTraP_script.m %%
+%% PlumeTraP 2.1.0 - Main function executed by PlumeTraP_script.m %%
 % Copyright (C) 2024 Riccardo Simionato
-% Last updated: Apr-2024
+% Last updated: May 2024
 
 function PlumeTraP_main4script...
     (source,inFolder,name,inFormat,outFolder,outFormat,...
@@ -8,7 +8,8 @@ function PlumeTraP_main4script...
     gcal,GeometricalData,HorizontalCalibratedData,VerticalCalibratedData,...
     wcor,geopot_nc,wind_nc,WindData)
 
-fprintf('PlumeTraP 2.0.0\nCopyright (C) 2024 Riccardo Simionato\n\nThis program is free software: you can redistribute it and/or modify it under the terms of the\nGNU General Public License as published by the Free Software Foundation, either version 3 of the\nLicense, or (at your option) any later version.\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;\nwithout even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\nSee the GNU General Public License for more details (https://www.gnu.org/licenses/gpl-3.0.html).\n\n')
+fprintf('PlumeTraP 2.1.0\nCopyright (C) 2024 Riccardo Simionato\n\nThis program is free software: you can redistribute it and/or modify it under the terms of the\nGNU General Public License as published by the Free Software Foundation, either version 3 of the\nLicense, or (at your option) any later version.\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;\nwithout even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\nSee the GNU General Public License for more details (https://www.gnu.org/licenses/gpl-3.0.html).\n\n')
+warning('off','MATLAB:MKDIR:DirectoryExists')
 
 if source == 'v'
     list = (dir(fullfile(inFolder,inFormat)));                              % list of the videos and their info
@@ -102,9 +103,14 @@ for v = 1:length(list)                                                      % st
     %% Corrections & calculation of plume parameters
     if parameters == true
         imageList_proc = dir(fullfile(outFolder_proc,outFormat));           % read images
+        if isempty(imageList_proc) && source == 'i'
+            imageList_proc = dir(fullfile(outFolder_proc,inFormat));
+        end
         outFolder_parameters = fullfile(outFolder,name);
         [imgplume_height,imgplume_width] = ...
             size(imread(fullfile(outFolder_proc,imageList_proc(1).name)));
+        pixel.vent_pos_x = imgplume_width/2;
+        pixel.vent_pos_y = imgplume_height/2;
         
         %% Corrections
         if gcal == 'c'
@@ -123,7 +129,7 @@ for v = 1:length(list)                                                      % st
                             string(geometrical_data{8}(V))+' '+...
                             string(geometrical_data{9}(V)),...
                             'InputFormat','dd-MMM-yyyy HH:mm:ss');
-                        par.wind = geometrical_data{10}(V);                 % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
+                        par.wind_met = geometrical_data{10}(V);                 % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
                         par.vent_lat = geometrical_data{11}(V);             % Approximate latitude (decimal)
                         par.vent_long = geometrical_data{12}(V);            % Approximate longitude (decimal)
                         par.vent_h = geometrical_data{13}(V);               % Vent height
@@ -132,18 +138,6 @@ for v = 1:length(list)                                                      % st
             end
             par.beta_h_pixel = par.beta_h/imgplume_width;                   % Determine the horizontal angle subtended by each pixel
             par.beta_v_pixel = par.beta_v/imgplume_height;                  % Determine the vertical angle subtended by each pixel
-
-            % Apply geometrical calibration and wind correction
-            if wcor == false
-                [pixel] = geometrical_calibration...
-                    (imgplume_height,imgplume_width,par);
-                wdir = 'nowind';
-            elseif wcor == true
-                [pixel,wdir] = geometrical_calibration_windcorrected...
-                    (procframes,outFolder_proc,imageList_proc,imageList_orig,...
-                    outFolder_parameters,imgplume_height,imgplume_width,par,...
-                    geopot_nc,wind_nc);
-            end
 
         elseif gcal == 'u'                                                  % Use calibration file
             h_cal = table2array(readtable(HorizontalCalibratedData));       % Read data file as an array
@@ -168,7 +162,7 @@ for v = 1:length(list)                                                      % st
                             string(wind_data{6}(V))+' '+...
                             string(wind_data{7}(V)),...
                             'InputFormat','dd-MMM-yyyy HH:mm:ss');
-                        par.wind = wind_data{8}(V);                 % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
+                        par.wind_met = wind_data{8}(V);                 % Wind direction if known (otherwise set NaN in the column and use .nc files from ERA5)
                         par.vent_lat = wind_data{9}(V);             % Approximate latitude (decimal)
                         par.vent_long = wind_data{10}(V);            % Approximate longitude (decimal)
                         par.vent_h = wind_data{11}(V);               % Vent height
@@ -176,13 +170,12 @@ for v = 1:length(list)                                                      % st
                 end
                 par.beta_h_pixel = par.beta_h/imgplume_width;               % Determine the horizontal angle subtended by each pixel
                 par.beta_v_pixel = par.beta_v/imgplume_height;              % Determine the vertical angle subtended by each pixel
-
-                [pixel,wdir] = windcorrection(pixel,...
-                    procframes,outFolder_proc,imageList_proc,imageList_orig,...
-                    outFolder_parameters,imgplume_height,imgplume_width,par,...
-                    geopot_nc,wind_nc);
             end
         end
+
+        [pixel,wdir] = calibration(gcal,wcor,procframes,outFolder_proc,...
+            imageList_proc,imageList_orig,outFolder_parameters,...
+            imgplume_height,imgplume_width,par,geopot_nc,wind_nc,pixel,name);
 
         %% Get & save plume parameters
         if wcor == false || isequal(wdir,'parallel')
@@ -207,7 +200,8 @@ for v = 1:length(list)                                                      % st
     beep
     if length(list) > 1 && isequal(isequal(length(list),v),0)
         close all
-        clear("pixel")
+        clear pixel par
     end
 end
+warning('on','MATLAB:MKDIR:DirectoryExists')
 end
